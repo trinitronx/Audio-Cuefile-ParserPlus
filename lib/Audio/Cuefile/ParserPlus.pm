@@ -16,6 +16,102 @@ BEGIN {
     %EXPORT_TAGS = ();
 }
 
+#################### main pod documentation begin ###################
+## Below is the stub of documentation for your module. 
+## You better edit it!
+
+
+=head1 NAME
+
+Audio::Cuefile::ParserPlus - Class to read, write & manipulate CUE files
+
+=head1 SYNOPSIS
+
+  use Audio::Cuefile::ParserPlus;
+  Class to parse a cuefile and access all available data within.
+  Can print track list, output cue files, or return a Audio::Cuefile::ParserPlus object
+
+
+=head1 DESCRIPTION
+
+  Audio::Cuefile::ParserPlus was built using the CUE sheet file specification 
+  found at: 
+    http://digitalx.org/cuesheetsyntax.php
+  The internal data structure organizes the CUE sheet commands mainly by what are 
+  considered 'global' attributes and those specific to a single 'TRACK'.
+  To print track specific attributes, use the printTracks() method.
+
+
+=head1 USAGE
+
+use use Audio::Cuefile::ParserPlus;
+
+$filepath = 'filename.cue';
+
+# Create an empty object & read a file with readCUE()
+my $cuefile = new Audio::Cuefile::ParserPlus();
+$cuefile->readCUE($filepath);
+# OR specify the file in the constructor:
+my $other_cuefile = new Audio::Cuefile::ParserPlus($filepath);
+
+# Print the track data
+$cuefile->printTracks();
+$other_cuefile->printTracks();
+
+=head1 CLASS DOCUMENTATION
+  
+  
+=cut
+
+
+
+#################### main pod documentation end ###################
+# Constructor
+sub new
+{
+	my $class = shift;
+	my $CUEfilepath = shift;
+	
+=head2 Static Package Variables
+ 
+ 
+ @AUDIO::Cuefile::ParserPlus::CUESHEET_COMMANDS
+        = Array containing track specific cuesheet 
+          commands in the order we want to print them 
+          in (using printTracks)
+ $AUDIO::Cuefile::ParserPlus::DEBUG
+        = Turn debugging output on
+        
+=cut
+
+
+	@AUDIO::Cuefile::ParserPlus::CUESHEET_COMMANDS = qw(
+		track datatype file filetype flags performer title songwriter pregap isrc index postgap
+		);
+	$AUDIO::Cuefile::ParserPlus::DEBUG = 0;
+	
+	my $self = bless (
+	{
+		CUEfilepath => $CUEfilepath,
+		file => undef,
+		filetype => undef,
+		cdtextfile => undef,
+		title => undef,
+		performer => undef,
+		catalog => undef,
+		tracks => undef
+	}, ref ($class) || $class);
+	
+	if (defined($CUEfilepath) && -e $CUEfilepath)
+	{
+		# Get the file path, name and suffix
+		my ( $name, $path, $suffix ) = File::Basename::fileparse( $CUEfilepath, qr/\.[^.]*/ );
+		readCUE($self, $CUEfilepath); # Read & set all attributes in the object!
+	}
+	
+	return $self; # since we blessed it above, need to return self
+}
+
 #################### subroutine header begin ####################
 
 =head2 readCUE
@@ -235,115 +331,17 @@ sub openStripCUE
 
 #################### subroutine header end ####################
 
-#################### subroutine header begin ####################
-
-#=head2 sample_function
-=pod
- Usage     : How to use this function/method
- Purpose   : What it does
- Returns   : What it returns
- Argument  : What it wants to know
- Throws    : Exceptions and other anomolies
- Comment   : This is a sample subroutine header.
-           : It is polite to include more pod and fewer comments.
-
-See Also   : 
-
-=cut
-
-#################### subroutine header end ####################
-
-# Constructor
-sub new
-{
-	my $class = shift;
-	my $CUEfilepath = shift;
-	
-=head2 Static Package Variables
-
- @CUESHEET_COMMANDS = Array containing track specific cuesheet 
-                      commands in the order we want to print them 
-					  in (using printTracks)
- $AUDIO::Cuefile::ParserPlus::DEBUG             = Turn debugging output on
-=cut
-	@AUDIO::Cuefile::ParserPlus::CUESHEET_COMMANDS = qw(
-		track datatype file filetype flags performer title songwriter pregap isrc index postgap
-		);
-	$AUDIO::Cuefile::ParserPlus::DEBUG = 0;
-	
-	my $self = bless (
-	{
-		CUEfilepath => $CUEfilepath,
-		file => undef,
-		filetype => undef,
-		cdtextfile => undef,
-		title => undef,
-		performer => undef,
-		catalog => undef,
-		tracks => undef
-	}, ref ($class) || $class);
-	
-	if (defined($CUEfilepath) && -e $CUEfilepath)
-	{
-		# Get the file path, name and suffix
-		my ( $name, $path, $suffix ) = File::Basename::fileparse( $CUEfilepath, qr/\.[^.]*/ );
-		readCUE($self, $CUEfilepath); # Read & set all attributes in the object!
-	}
-	
-	return $self; # since we blessed it above, need to return self
-}
-
-
-#################### main pod documentation begin ###################
-## Below is the stub of documentation for your module. 
-## You better edit it!
-
-
-=head1 NAME
-
-Audio::Cuefile::ParserPlus - Class to read, write & manipulate CUE files
-
-=head1 SYNOPSIS
-
-  use Audio::Cuefile::ParserPlus;
-  Class to parse a cuefile and access all available data within.
-  Can print track list, output cue files, or return a Audio::Cuefile::ParserPlus object
-
-
-=head1 DESCRIPTION
-
-  Audio::Cuefile::ParserPlus was built using the CUE sheet file specification 
-  found at:
-    http://digitalx.org/cuesheetsyntax.php
-  The internal data structure organizes the CUE sheet commands mainly by what are 
-  considered 'global' attributes and those specific to a single 'TRACK'.
-  To print track specific attributes, use the printTracks() method.
-
-
-=head1 USAGE
-
-use use Audio::Cuefile::ParserPlus;
-
-$filepath = 'filename.cue';
-
-# Create an empty object & read a file with readCUE()
-my $cuefile = new Audio::Cuefile::ParserPlus();
-$cuefile->readCUE($filepath);
-# OR specify the file in the constructor:
-my $other_cuefile = new Audio::Cuefile::ParserPlus($filepath);
-
-# Print the track data
-$cuefile->printTracks();
-$other_cuefile->printTracks();
-
+#################### rest-of-main pod documentation begin ####################
 =head1 BUGS
 
-Doesn't support multi-file CUE sheets yet! (TODO!)
-CUE file output support not added yet! (TODO!!!)
+ Doesn't support multi-file CUE sheets yet! (TODO!)
+
+ CUE file output support not added yet! (TODO!!!)
 
 =head1 SUPPORT
 
-
+This module is provided as is, use at your own risk.  If you *really* need help, 
+then you can email me at: jcuzella@lyraphase.com, or my website http://www.lyraphase.com/ 
 
 =head1 AUTHOR
 
@@ -351,7 +349,7 @@ CUE file output support not added yet! (TODO!!!)
     CPAN ID: JCUZELLA
     .:[ HoTSC ]:.
     jcuzella@lyraphase.com
-    http://www.lyraphase.com
+    http://www.lyraphase.com/
 
 =head1 COPYRIGHT
 
@@ -367,9 +365,7 @@ LICENSE file included with this module.
 perl(1).
 
 =cut
-
-#################### main pod documentation end ###################
-
+#################### rest-of-main pod documentation end ####################
 
 1; # End of Audio::Cuefile::Parser
 # The preceding line will help the module return a true value

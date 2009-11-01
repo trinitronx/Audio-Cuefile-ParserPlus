@@ -1,15 +1,100 @@
-pod2text Audio::Cuefile::ParserPlus.pm > README
+NAME
+    Audio::Cuefile::ParserPlus - Class to read, write & manipulate CUE files
 
-If this is still here it means the programmer was too lazy to create the readme file.
+SYNOPSIS
+      use Audio::Cuefile::ParserPlus;
+      Class to parse a cuefile and access all available data within.
+      Can print track list, output cue files, or return a Audio::Cuefile::ParserPlus object
 
-You can create it now by using the command shown above from this directory.
+DESCRIPTION
+      Audio::Cuefile::ParserPlus was built using the CUE sheet file specification 
+      found at: 
+        http://digitalx.org/cuesheetsyntax.php
+      The internal data structure organizes the CUE sheet commands mainly by what are 
+      considered 'global' attributes and those specific to a single 'TRACK'.
+      To print track specific attributes, use the printTracks() method.
 
-At the very least you should be able to use this set of instructions
-to install the module...
+USAGE
+    use use Audio::Cuefile::ParserPlus;
 
-perl Makefile.PL
-make
-make test
-make install
+    $filepath = 'filename.cue';
 
-If you are on a windows box you should use 'nmake' rather than 'make'.
+    # Create an empty object & read a file with readCUE() my $cuefile = new
+    Audio::Cuefile::ParserPlus(); $cuefile->readCUE($filepath); # OR specify
+    the file in the constructor: my $other_cuefile = new
+    Audio::Cuefile::ParserPlus($filepath);
+
+    # Print the track data $cuefile->printTracks();
+    $other_cuefile->printTracks();
+
+CLASS DOCUMENTATION
+  Static Package Variables
+     @AUDIO::Cuefile::ParserPlus::CUESHEET_COMMANDS
+            = Array containing track specific cuesheet 
+              commands in the order we want to print them 
+              in (using printTracks)
+     $AUDIO::Cuefile::ParserPlus::DEBUG
+            = Turn debugging output on
+
+  readCUE
+     Usage     : $cuefileparser->readCUE('path/to/cuefile.cue');
+     Purpose   : Gives the parse a CUE sheet to read & parse
+     Returns   : Nothing! (Sets all member variables however)
+     Argument  : What it wants to know
+     Throws    : Nothing yet!
+     Comment   : After using readCUE(), you may access the member variables
+               : that it sets as public properties for ease of use.
+
+    See Also :
+
+  printTracks
+     Usage     : $cuefileparser->printTracks();
+     Purpose   : Print the parsed cue sheet @tracks array of hashes
+     Returns   : Nothing! (prints output to console)
+     Constraint: Must have loaded a CUE sheet with readCUE first if you 
+               : expect any output!
+     Throws    : Nothing
+     Comment   : 
+               :
+
+    See Also :
+
+  openStripCUE
+     Usage     : Meant for private use within Audio::Cuefile::ParserPlus
+     Purpose   : Utility function to open & read entire CUE file, stripping
+               : any REM comments or blank lines.
+     Returns   : String containing the stripped CUE file.
+     Argument  : filepath = path to a CUE sheet file.
+     Throws    : Nothing yet! (TODO: file IO exceptions)
+     Comment   : 
+               :
+
+    See Also :
+
+BUGS
+     Doesn't support multi-file CUE sheets yet! (TODO!)
+
+     CUE file output support not added yet! (TODO!!!)
+
+SUPPORT
+    This module is provided as is, use at your own risk. If you *really*
+    need help, then you can email me at: jcuzella@lyraphase.com, or my
+    website http://www.lyraphase.com/
+
+AUTHOR
+        James Cuzella
+        CPAN ID: JCUZELLA
+        .:[ HoTSC ]:.
+        jcuzella@lyraphase.com
+        http://www.lyraphase.com/
+
+COPYRIGHT
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
+    The full text of the license can be found in the LICENSE file included
+    with this module.
+
+SEE ALSO
+    perl(1).
+
