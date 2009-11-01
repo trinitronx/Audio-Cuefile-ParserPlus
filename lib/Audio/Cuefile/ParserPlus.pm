@@ -44,47 +44,44 @@ Audio::Cuefile::ParserPlus - Class to read, write & manipulate CUE files
 
 =head1 USAGE
 
-use use Audio::Cuefile::ParserPlus;
+ use Audio::Cuefile::ParserPlus;
 
-$filepath = 'filename.cue';
+ $filepath = 'filename.cue';
 
-# Create an empty object & read a file with readCUE()
-my $cuefile = new Audio::Cuefile::ParserPlus();
-$cuefile->readCUE($filepath);
-# OR specify the file in the constructor:
-my $other_cuefile = new Audio::Cuefile::ParserPlus($filepath);
-
-# Print the track data
-$cuefile->printTracks();
-$other_cuefile->printTracks();
-
+ # Create an empty object & read a file with readCUE()
+ my $cuefile = new Audio::Cuefile::ParserPlus();
+ $cuefile->readCUE($filepath);
+ # OR specify the file in the constructor:
+ my $other_cuefile = new Audio::Cuefile::ParserPlus($filepath);
+ 
+ # Print the track data
+ $cuefile->printTracks();
+ $other_cuefile->printTracks();
+ 
 =head1 CLASS DOCUMENTATION
-  
-  
+ 
+ Here is some more detailed information about using the class:
+ 
+=head2 Static Package Variables
+ 
+ 
+ @AUDIO::Cuefile::ParserPlus::CUESHEET_COMMANDS
+        - Array containing track specific cuesheet 
+          commands in the order we want to print them 
+          in (using printTracks)
+ $AUDIO::Cuefile::ParserPlus::DEBUG
+        - Turn debugging output on
+ 
 =cut
-
-
-
+ 
 #################### main pod documentation end ###################
-# Constructor
+
+## Constructor
 sub new
 {
 	my $class = shift;
 	my $CUEfilepath = shift;
 	
-=head2 Static Package Variables
- 
- 
- @AUDIO::Cuefile::ParserPlus::CUESHEET_COMMANDS
-        = Array containing track specific cuesheet 
-          commands in the order we want to print them 
-          in (using printTracks)
- $AUDIO::Cuefile::ParserPlus::DEBUG
-        = Turn debugging output on
-        
-=cut
-
-
 	@AUDIO::Cuefile::ParserPlus::CUESHEET_COMMANDS = qw(
 		track datatype file filetype flags performer title songwriter pregap isrc index postgap
 		);
@@ -113,7 +110,8 @@ sub new
 }
 
 #################### subroutine header begin ####################
-
+ 
+ 
 =head2 readCUE
 
  Usage     : $cuefileparser->readCUE('path/to/cuefile.cue');
@@ -127,6 +125,8 @@ sub new
 See Also   : 
 
 =cut
+
+#################### subroutine header end ####################
 
 sub readCUE
 {
@@ -239,8 +239,6 @@ sub readCUE
 	$self->{tracks} = \@tracks;
 }
 
-#################### subroutine header end ####################
-
 #################### subroutine header begin ####################
 
 =head2 printTracks
@@ -257,6 +255,8 @@ sub readCUE
 See Also   : 
 
 =cut
+
+#################### subroutine header end ####################
 
 # Function to print the parsed cue sheet @tracks array of hashes
 # Takes an array of hashes representing a cuesheet (as created by readCUE)
@@ -283,8 +283,6 @@ sub printTracks
 	}
 }
 
-#################### subroutine header end ####################
-
 #################### subroutine header begin ####################
 
 =head2 openStripCUE
@@ -301,6 +299,8 @@ sub printTracks
 See Also   : 
 
 =cut
+
+#################### subroutine header end ####################
 
 # Private utility function to read in a CUE file and output it as a string
 # Strips empty lines and REM comments (to avoid matching problems later)
@@ -328,8 +328,6 @@ sub openStripCUE
 	}
 	return $file;
 }
-
-#################### subroutine header end ####################
 
 #################### rest-of-main pod documentation begin ####################
 =head1 BUGS

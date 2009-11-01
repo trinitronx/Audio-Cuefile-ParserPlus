@@ -15,26 +15,30 @@ DESCRIPTION
       To print track specific attributes, use the printTracks() method.
 
 USAGE
-    use use Audio::Cuefile::ParserPlus;
+     use Audio::Cuefile::ParserPlus;
 
-    $filepath = 'filename.cue';
+     $filepath = 'filename.cue';
 
-    # Create an empty object & read a file with readCUE() my $cuefile = new
-    Audio::Cuefile::ParserPlus(); $cuefile->readCUE($filepath); # OR specify
-    the file in the constructor: my $other_cuefile = new
-    Audio::Cuefile::ParserPlus($filepath);
-
-    # Print the track data $cuefile->printTracks();
-    $other_cuefile->printTracks();
+     # Create an empty object & read a file with readCUE()
+     my $cuefile = new Audio::Cuefile::ParserPlus();
+     $cuefile->readCUE($filepath);
+     # OR specify the file in the constructor:
+     my $other_cuefile = new Audio::Cuefile::ParserPlus($filepath);
+     
+ # Print the track data
+     $cuefile->printTracks();
+     $other_cuefile->printTracks();
 
 CLASS DOCUMENTATION
+     Here is some more detailed information about using the class:
+
   Static Package Variables
      @AUDIO::Cuefile::ParserPlus::CUESHEET_COMMANDS
-            = Array containing track specific cuesheet 
+            - Array containing track specific cuesheet 
               commands in the order we want to print them 
               in (using printTracks)
      $AUDIO::Cuefile::ParserPlus::DEBUG
-            = Turn debugging output on
+            - Turn debugging output on
 
   readCUE
      Usage     : $cuefileparser->readCUE('path/to/cuefile.cue');
