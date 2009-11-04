@@ -2,18 +2,48 @@ package Audio::Cuefile::ParserPlus;
 use strict;
 use warnings;
 use diagnostics;
+
 use File::Basename;
+#use Data::Dumper;
 use 5.010;
 
 BEGIN {
     use Exporter ();
+	
+	use Error qw(:try);
+	use Exception::Class
+    ( 'IOException' => 
+      { description => 'generic base class for all IO exceptions' },
+      
+	  'IOException::PathNotFound' => 
+      { isa => 'IOException',
+        description => 'File path was not specified.' },
+      
+      'IOException::Read' => 
+      { isa => 'IOException', 
+        description => "Error during file read" },
+      
+      'IOException::Write' => 
+      { isa => 'IOException', 
+        description => "Error during file write" }, 
+    );
+	
+	
+	#@IOException::ISA = qw(Error);
+	
+	push @Exception::Class::Base::ISA, 'Error'
+	unless Exception::Class::Base->isa('Error');
+
+	
     use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
     $VERSION     = '0.01';
     @ISA         = qw(Exporter);
     #Give a hoot don't pollute, do not export more than needed by default
-    @EXPORT      = qw();
+    @EXPORT      = qw( Exception::Class::Base::IOException );
     @EXPORT_OK   = qw();
     %EXPORT_TAGS = ();
+	
+	
 }
 
 #################### main pod documentation begin ###################
@@ -103,7 +133,7 @@ sub new
 	{
 		# Get the file path, name and suffix
 		my ( $name, $path, $suffix ) = File::Basename::fileparse( $CUEfilepath, qr/\.[^.]*/ );
-		readCUE($self, $CUEfilepath); # Read & set all attributes in the object!
+		$self->readCUE($CUEfilepath); # Read & set all attributes in the object!
 	}
 	
 	return $self; # since we blessed it above, need to return self
@@ -115,10 +145,11 @@ sub new
 =head2 readCUE
 
  Usage     : $cuefileparser->readCUE('path/to/cuefile.cue');
- Purpose   : Gives the parse a CUE sheet to read & parse
+ Purpose   : Gives the parse a CUE sheet to read & parse, sets $self->CUEfilepath if not defined
  Returns   : Nothing! (Sets all member variables however)
- Argument  : What it wants to know
- Throws    : Nothing yet!
+ Argument  : filepath = path to a CUE sheet file. (optional)
+           : if no filepath given, uses $cuefileparser->CUEfilepath if defined
+ Throws    : IOException::PathNotFound
  Comment   : After using readCUE(), you may access the member variables
            : that it sets as public properties for ease of use.
 
@@ -133,12 +164,26 @@ sub readCUE
 	my ($self) = shift;
 	my ($filepath) = shift;
 	
-	if (!defined($self->{CUEfilepath}) && defined($filepath) && -e $filepath)
+	# Passed in filepath should override the CUEfilepath
+	if (defined($filepath) && -e $filepath)
 	{
 		$self->{CUEfilepath} = $filepath;
 	}
+	elsif (!defined($self->{CUEfilepath}))
+	{
+		throw IOException::PathNotFound("CUE file path does not exist or was not defined!\n CUEfilepath = " + $self->CUEfilepath);
+	}
 	
-	my $src_cue = openStripCUE($filepath);
+	my $src_cue = "";
+	try
+	{
+		$src_cue = $self->openStripCUE($filepath);
+    }
+    catch IOException with
+	{
+		my $E = shift;
+		print STDERR $E->message();
+    };
 	
 	my %cuesheet; # a hash to contain the cuesheet's global commands, and the @tracks array
 	my @tracks; # this will be an array of hashes containing parsed data on each track
@@ -292,7 +337,7 @@ sub printTracks
            : any REM comments or blank lines.
  Returns   : String containing the stripped CUE file.
  Argument  : filepath = path to a CUE sheet file.
- Throws    : Nothing yet! (TODO: file IO exceptions)
+ Throws    : IOException::Read
  Comment   : 
            : 
 
@@ -306,9 +351,10 @@ See Also   :
 # Strips empty lines and REM comments (to avoid matching problems later)
 sub openStripCUE
 {
+	my ($self) = shift;
 	my ($filepath) = shift;
 	
-	open(FILE, $filepath) or die ("Could not open $filepath!\n");
+	open(FILE, $filepath) or throw IOException::Read("Could not open $filepath!\n");
 	my $file = "";
 	# Read data from the source CUE file
 	while(<FILE>)
@@ -328,6 +374,59 @@ sub openStripCUE
 	}
 	return $file;
 }
+
+#################### subroutine header begin ####################
+ 
+ 
+=head2 writeCUE
+
+ Usage     : $cuefileparser->writeCUE('path/to/cuefile.cue');
+ Purpose   : Writes out a cuefile from the internal data structure.
+           : Uses $filepath if passed, else writes to the current path stored in
+		   : $self->CUEfilepath
+ Returns   : Nothing!
+ Argument  : filepath = path to a CUE sheet file. (optional)
+           : if no filepath given, uses $cuefileparser->CUEfilepath if defined
+ Throws    : IOException::Read, IOException::PathNotFound
+ Comment   : After using readCUE(), you may access the member variables
+           : that it sets as public properties for ease of use.
+
+See Also   : 
+
+=cut
+
+#################### subroutine header end ####################
+
+sub writeCUE
+{
+	my ($self) = shift;
+	my ($outputFile) = shift;
+	
+	my $filepath;
+	if (defined($outputFile) && -w $outputFile)
+	{
+		$filepath = $outputFile;
+	}
+	elsif (!defined($filepath))
+	{
+		throw IOException::PathNotFound("CUE file path was not defined!");
+	}
+	print "Output File path: $filepath";
+	
+	# open the output file
+	open (OUTFILE, ">$filepath") or throw IOException::Read("Error: Could not open '$self->{CUEfilepath}': $!");	
+	
+	# Print the global CUE commands
+	my $WriteBuffer = '';
+	
+	$WriteBuffer .= (defined($self->{'performer'}))? 'PERFORMER "' . $self->{'performer'} . '"' : '';
+	$WriteBuffer .= (defined($self->{'performer'}))? 'TITLE "' . $self->{'title'} . '"' : '';
+
+	print OUTFILE $WriteBuffer;
+	close OUTFILE;
+	
+}
+
 
 #################### rest-of-main pod documentation begin ####################
 =head1 BUGS
