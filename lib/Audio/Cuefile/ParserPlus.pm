@@ -12,20 +12,39 @@ BEGIN {
 	
 	use Error qw(:try);
 	use Exception::Class
-    ( 'IOException' => 
-      { description => 'generic base class for all IO exceptions' },
+    ( 'Audio::Cuefile::Exception' => 
+	  { alias => 'Cuefile_Exception',
+	    description => 'generic base class for all Audio Cuefile exceptions'
+	  },
+	  
+	  'Audio::Cuefile::IOException' => 
+      { description => 'generic base class for all IO exceptions',
+	     alias => 'IO_Exception',
+		 isa => 'Audio::Cuefile::Exception'
+	  },
       
-	  'IOException::PathNotFound' => 
-      { isa => 'IOException',
-        description => 'File path was not specified.' },
+	  'Audio::Cuefile::IOException::PathNotFound' => 
+      { isa => 'Audio::Cuefile::IOException',
+	    alias => 'PathNotFound_Exception',
+        description => 'File path was not specified.'
+	  },
       
-      'IOException::Read' => 
-      { isa => 'IOException', 
-        description => "Error during file read" },
+      'Audio::Cuefile::IOException::Read' => 
+      { isa => 'Audio::Cuefile::IOException', 
+	    alias => 'IO_Read_Exception',
+        description => "Error during file read"
+	  },
       
-      'IOException::Write' => 
-      { isa => 'IOException', 
-        description => "Error during file write" }, 
+      'Audio::Cuefile::IOException::Write' => 
+      { isa => 'Audio::Cuefile::IOException', 
+	    alias => 'IO_Write_Exception',
+        description => "Error during file write"
+	  }, 
+	  
+	  'Audio::Cuefile::EmptyTracks' => 
+      { isa => 'Audio::Cuefile::Exception', 
+	    alias => 'EmptyTracks_Exception',
+        description => "Parsed tracks array was not defined while trying to read from it." }, 
     );
 	
 	
@@ -39,8 +58,8 @@ BEGIN {
     $VERSION     = '0.01';
     @ISA         = qw(Exporter);
     #Give a hoot don't pollute, do not export more than needed by default
-    @EXPORT      = qw( Exception::Class::Base::IOException );
-    @EXPORT_OK   = qw();
+    @EXPORT      = qw();
+    @EXPORT_OK   = qw( Cuefile_Exception );
     %EXPORT_TAGS = ();
 	
 	
@@ -125,6 +144,7 @@ sub new
 		cdtextfile => undef,
 		title => undef,
 		performer => undef,
+		songwriter => undef,
 		catalog => undef,
 		tracks => undef
 	}, ref ($class) || $class);
@@ -171,7 +191,8 @@ sub readCUE
 	}
 	elsif (!defined($self->{CUEfilepath}))
 	{
-		throw IOException::PathNotFound("CUE file path does not exist or was not defined!\n CUEfilepath = " + $self->CUEfilepath);
+		# throw the Audio::Cuefile::IOException::PathNotFound exception
+		PathNotFound_Exception("CUE file path does not exist or was not defined!\n");
 	}
 	
 	my $src_cue = "";
@@ -179,7 +200,7 @@ sub readCUE
 	{
 		$src_cue = $self->openStripCUE($filepath);
     }
-    catch IOException with
+    catch Audio::Cuefile::IOException::Read with
 	{
 		my $E = shift;
 		print STDERR $E->message();
@@ -309,8 +330,12 @@ sub printTracks
 {
 	my ($self) = shift;
 	
+	if (!defined($self->{tracks}))
+	{
+		print "";
+	}
+	
 	print "PARSED CUE SHEET: \n";
-	#my @tracks = @{ $self->{tracks} }; # don't use local var anymore
 	
 	my $track_no = scalar( @{ $self->{tracks} } );
 	for (my $i=0; $i < $track_no; $i++)
@@ -354,7 +379,8 @@ sub openStripCUE
 	my ($self) = shift;
 	my ($filepath) = shift;
 	
-	open(FILE, $filepath) or throw IOException::Read("Could not open $filepath!\n");
+	# open the input file, or throw the Audio::Cuefile::IOException::Read Exception
+	open(FILE, $filepath) or throw Read_Exception("Error: Could not open '$self->{CUEfilepath}' for reading: $!");
 	my $file = "";
 	# Read data from the source CUE file
 	while(<FILE>)
@@ -382,14 +408,14 @@ sub openStripCUE
 
  Usage     : $cuefileparser->writeCUE('path/to/cuefile.cue');
  Purpose   : Writes out a cuefile from the internal data structure.
-           : Uses $filepath if passed, else writes to the current path stored in
-		   : $self->CUEfilepath
+           : Uses $filepath if defined & writable, else writes 
+		   : to the current path stored in $self->CUEfilepath
  Returns   : Nothing!
  Argument  : filepath = path to a CUE sheet file. (optional)
            : if no filepath given, uses $cuefileparser->CUEfilepath if defined
- Throws    : IOException::Read, IOException::PathNotFound
- Comment   : After using readCUE(), you may access the member variables
-           : that it sets as public properties for ease of use.
+ Throws    : IOException::Write, IOException::PathNotFound
+ Comment   : Will overwrite the file stored in $filepath if defined & 
+           : writable, else $self->CUEfilepath if defined
 
 See Also   : 
 
@@ -400,28 +426,51 @@ See Also   :
 sub writeCUE
 {
 	my ($self) = shift;
-	my ($outputFile) = shift;
+	my ($filepath) = shift;
 	
-	my $filepath;
-	if (defined($outputFile) && -w $outputFile)
+	if ( defined($filepath) )
 	{
-		$filepath = $outputFile;
+		$self->{CUEfilepath} = $filepath;
 	}
-	elsif (!defined($filepath))
+	elsif (!defined($self->{CUEfilepath}))
 	{
-		throw IOException::PathNotFound("CUE file path was not defined!");
+		# throw the Audio::Cuefile::IOException::PathNotFound exception
+		PathNotFound_Exception("CUE file path was not defined!");
 	}
-	print "Output File path: $filepath";
 	
-	# open the output file
-	open (OUTFILE, ">$filepath") or throw IOException::Read("Error: Could not open '$self->{CUEfilepath}': $!");	
+	
+	# open the output file, or throw the Audio::Cuefile::IOException::Write Exception
+	open (OUTFILE, ">$self->{CUEfilepath}") or Write_Exception("Error: Could not open '$self->{CUEfilepath}' for writing: $!");
 	
 	# Print the global CUE commands
 	my $WriteBuffer = '';
 	
-	$WriteBuffer .= (defined($self->{'performer'}))? 'PERFORMER "' . $self->{'performer'} . '"' : '';
-	$WriteBuffer .= (defined($self->{'performer'}))? 'TITLE "' . $self->{'title'} . '"' : '';
-
+	$WriteBuffer .= (defined($self->{'catalog'}))? 'CATALOG ' . $self->{'catalog'} . "\r\n" : '';
+	$WriteBuffer .= (defined($self->{'performer'}))? 'PERFORMER "' . $self->{'performer'} . "\"\r\n" : '';
+	$WriteBuffer .= (defined($self->{'title'}))? 'TITLE "' . $self->{'title'} . "\"\r\n" : '';
+	$WriteBuffer .= (defined($self->{'songwriter'}))? 'SONGWRITER "' . $self->{'songwriter'} . "\"\r\n" : '';
+	$WriteBuffer .= (defined($self->{'cdtextfile'}))? 'CDTEXTFILE "' . $self->{'cdtextfile'} . "\"\r\n" : '';
+	$WriteBuffer .= (defined($self->{'file'}))? 'FILE "' . $self->{'file'} . '" ' . $self->{'filetype'} . "\r\n" : '';
+	
+	# Now print the track commands & index points
+	my $num_tracks = scalar( @{ $self->{tracks} } );
+	for (my $i=0; $i < $num_tracks; $i++)
+	{
+		# Print the data we've got for the tracks in the order
+		# specified in the CUESHEET_COMMANDS array
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'file'}))? 'FILE "' . $self->{'tracks'}[$i]{'file'} . '" ' . $self->{'tracks'}[$i]{'filetype'} . "\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'track'}))? '  TRACK ' . $self->{'tracks'}[$i]{'track'} . ' ' . $self->{'tracks'}[$i]{'datatype'} . "\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'flags'}))? '    FLAGS ' . $self->{'tracks'}[$i]{'flags'} . "\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'performer'}))? '    PERFORMER "' . $self->{'tracks'}[$i]{'performer'} . "\"\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'title'}))? '    TITLE "' . $self->{'tracks'}[$i]{'title'} . "\"\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'songwriter'}))? '    SONGWRITER "' . $self->{'tracks'}[$i]{'songwriter'} . "\"\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'isrc'}))? '    ISRC ' . $self->{'tracks'}[$i]{'isrc'} . "\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'pregap'}))? '    PREGAP ' . $self->{'tracks'}[$i]{'pregap'} . "\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'index'}))? '    INDEX 01 ' . $self->{'tracks'}[$i]{'index'} . "\r\n" : '';
+		$WriteBuffer .= (defined($self->{'tracks'}[$i]{'pregap'}))? '    POSTGAP ' . $self->{'tracks'}[$i]{'postgap'} . "\r\n" : '';
+		
+	}
+	
 	print OUTFILE $WriteBuffer;
 	close OUTFILE;
 	
@@ -433,7 +482,8 @@ sub writeCUE
 
  Doesn't support multi-file CUE sheets yet! (TODO!)
 
- CUE file output support not added yet! (TODO!!!)
+ Need INDEX 00 (pregap support)
+ Need INDEX >1 (subindex support)
 
 =head1 SUPPORT
 
