@@ -24,8 +24,8 @@ USAGE
      $cuefile->readCUE($filepath);
      # OR specify the file in the constructor:
      my $other_cuefile = new Audio::Cuefile::ParserPlus($filepath);
-     
- # Print the track data
+ 
+     # Print the track data
      $cuefile->printTracks();
      $other_cuefile->printTracks();
 
@@ -42,10 +42,11 @@ CLASS DOCUMENTATION
 
   readCUE
      Usage     : $cuefileparser->readCUE('path/to/cuefile.cue');
-     Purpose   : Gives the parse a CUE sheet to read & parse
+     Purpose   : Gives the parse a CUE sheet to read & parse, sets $self->CUEfilepath if not defined
      Returns   : Nothing! (Sets all member variables however)
-     Argument  : What it wants to know
-     Throws    : Nothing yet!
+     Argument  : filepath = path to a CUE sheet file. (optional)
+               : if no filepath given, uses $cuefileparser->CUEfilepath if defined
+     Throws    : IOException::PathNotFound
      Comment   : After using readCUE(), you may access the member variables
                : that it sets as public properties for ease of use.
 
@@ -69,16 +70,31 @@ CLASS DOCUMENTATION
                : any REM comments or blank lines.
      Returns   : String containing the stripped CUE file.
      Argument  : filepath = path to a CUE sheet file.
-     Throws    : Nothing yet! (TODO: file IO exceptions)
+     Throws    : IOException::Read
      Comment   : 
                :
+
+    See Also :
+
+  writeCUE
+     Usage     : $cuefileparser->writeCUE('path/to/cuefile.cue');
+     Purpose   : Writes out a cuefile from the internal data structure.
+               : Uses $filepath if defined & writable, else writes 
+                       : to the current path stored in $self->CUEfilepath
+     Returns   : Nothing!
+     Argument  : filepath = path to a CUE sheet file. (optional)
+               : if no filepath given, uses $cuefileparser->CUEfilepath if defined
+     Throws    : IOException::Write, IOException::PathNotFound
+     Comment   : Will overwrite the file stored in $filepath if defined & 
+               : writable, else $self->CUEfilepath if defined
 
     See Also :
 
 BUGS
      Doesn't support multi-file CUE sheets yet! (TODO!)
 
-     CUE file output support not added yet! (TODO!!!)
+     Need INDEX 00 (pregap support)
+     Need INDEX >1 (subindex support)
 
 SUPPORT
     This module is provided as is, use at your own risk. If you *really*
